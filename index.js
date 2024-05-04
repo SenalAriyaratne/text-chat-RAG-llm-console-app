@@ -1,9 +1,14 @@
-import {dotenv} from 'dotenv';
-import {AnthropicAgent} from './agent';
+import dotenv from 'dotenv';
+
+import VectorDataBase from './vectordb.js';
 dotenv.config();
 
-apiPineconce = process.env.PINECONE_API_KEY;
+const nameidx = "mytestone";
 
-const agent = new AnthropicAgent()
+const apiPinecone = process.env.PINECONE_API_KEY;
+
+const db = new VectorDataBase(apiPinecone);
+db.initialize(nameidx);
+
 
 
