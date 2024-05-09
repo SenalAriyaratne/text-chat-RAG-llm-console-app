@@ -1,4 +1,4 @@
-import scriptArray from "../promptscripts/scripts.js";
+import scriptArray from './promptscripts/scripts.js';
 
 class ScriptManager{
 

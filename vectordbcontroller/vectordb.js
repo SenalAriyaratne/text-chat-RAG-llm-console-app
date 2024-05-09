@@ -1,8 +1,9 @@
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { Pinecone } from '@pinecone-database/pinecone';
-import UtilityTools from './utility.js';
+import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
+import UtilityTools from '../utils/utility.js';
 import { AsymmetricStructuredOutputParser } from 'langchain/output_parsers';
-import DataLoader from './loader.js';
+import DataLoader from '../datacontroller/loader.js';
 
 
 class VectorDataBase {
@@ -23,8 +24,7 @@ class VectorDataBase {
 
         if (haveIndex) 
         {
-            console.log(`Index with the name ${this.index} already exists.`)
-
+            console.log(`Index with the name ${this.index} already exists.`);
         } 
         else 
         {
@@ -41,7 +41,7 @@ class VectorDataBase {
                     }
                 });
                 await this.utility.delay();
-                console.log(`Vector Database initialized with index name ${this.index}`)
+                console.log(`Vector Database initialized with index name ${this.index}`);
             } catch (error) {
                 console.log(`Error initializing PineCone DataBase  ${error.message}`);
             }
@@ -50,16 +50,24 @@ class VectorDataBase {
 
     checkIndex = async (name) => {
         const currentIndexes = await this.vectorDb.listIndexes();
-        for (const index of currentIndexes.indexes) {
-            if (index.name === name) {
-                return true;
-            }
+        const exists = currentIndexes.indexes.some(index => index.name === name);
+        return exists;
+    }
+
+
+    embedData = async (rawdata) => {
+        try {
+            const modelEmbed = new HuggingFaceTransformersEmbeddings({ model: "Xenova/all-MiniLM-L6-v2"});
+            return await modelEmbed.embedDocuments(rawdata);
+
+        } catch (error) {
+            return null;
         }
-        return false;
     }
 
     pushVector = async (data) => {
-        try {
+        try 
+        {
 
 
         }
@@ -69,6 +77,12 @@ class VectorDataBase {
     }
 
     queryIndex = async () => {
+
+    }
+
+    deleteIndex = async () => await this.vectorDb.deleteIndex(this.index);
+
+    #batchVectors = async () => {
 
     }
 
