@@ -4,37 +4,39 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
 class DataLoader {
 
-    #chunkSize = 500;
+    #chunkSize = 200;
     #chunkOverlap = 50;
+    
 
-    contructor() {
+    constructor() {
         this.pathToPdf = "";
         this.fullText = "";
-        this.#initializeSplitter();  
+      
     }
 
     setSplitterParams = async (chunksize=this.#chunkSize, overlap=this.#chunkSize) => {
         this.#chunkSize = chunksize;
         this.#chunkOverlap = overlap;
-        this.#initializeSplitter();
     }
 
     getSplitterInfo = () => ({"Chunksize" : this.#chunkSize, "Overlap": this.#chunkOverlap});
     
 
     #initializeSplitter =  () => {
-        console.log(`Initializing Text Splitter from Langchain ...`);
+        //console.log(`Initializing Text Splitter from Langchain ...`);
         try{
             
-            this.splitter = new RecursiveCharacterTextSplitter({
+             this.splitter = new RecursiveCharacterTextSplitter({
                 chunkSize: this.#chunkSize,
                 chunkOverlap: this.#chunkOverlap,
     
             });
-        console.log(`Splitter initialized with chunksize : ${this.#chunkSize} and Overlap with ${this.#chunkOverlap}`);
+            //console.log(`Splitter initialized with  a chunk size of ${this.#chunkSize} and Overlap of ${this.#chunkOverlap}`);
+            
 
         }catch(error){
             console.log(`Trouble initializing the text splitter ...`);
+            
 
         }
       
@@ -56,11 +58,37 @@ class DataLoader {
         }
     }
 
-    splitData = async (chunksize, overlap, data) => {
+    produceChunks = async (rawdocs) => {
+        try
+        {
+            const tempholder = [];
+            for (let idx = 0; idx < rawdocs.length; idx++)
+            {
+                let rawtext = rawdocs[idx].pageContent;
+                const chunks = await this.#splitData(rawtext);
+                tempholder.push(this.#newChunk(idx,chunks));
+    
+            }
+            //console.log(`Chunks produced sucessfully`);
+            return tempholder;
+
+        }catch(error)
+        {
+            console.log(`Trouble creating chunks... error message : ${error.message}`);
+            return null;
+
+        }
+
+    }
+
+    #newChunk = (id, values) => ({docid: id, chunkvalues: values});
+
+    #splitData = async (rawtext) => {
 
         try {
-            const chunks = await splitter.splitDocuments(data);
-            console.log(`Splitting process completed ...`);
+            this.#initializeSplitter();
+            const chunks = await this.splitter.createDocuments([rawtext]);
+           // console.log(`Splitting process completed ...`);
             return chunks;
         } catch (error) {
             console.log(`Error trying to split the documents.. error message: ${error.message}`);
@@ -69,10 +97,6 @@ class DataLoader {
 
     }
 
-    concatText = (chunks) => {
-        chunks.forEach(doc => this.fullText += doc.pageContent);
-        return this.fullText;
-    }
 }
 
 export default DataLoader;

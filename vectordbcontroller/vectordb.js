@@ -1,36 +1,36 @@
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { Pinecone } from '@pinecone-database/pinecone';
-import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
+
 import UtilityTools from '../utils/utility.js';
 import { AsymmetricStructuredOutputParser } from 'langchain/output_parsers';
-import DataLoader from '../datacontroller/loader.js';
+import { cat } from '@xenova/transformers';
+
 
 
 class VectorDataBase {
-    constructor(apikey, splitter = new DataLoader()) {
+    #vectorDb;
+    constructor(apikey) {
         this.apiKey = apikey;
+        this.indexName = null;
         this.index = null;
-        this.vectorDb = new Pinecone({
+        this.#vectorDb = new Pinecone({
             apiKey: this.apiKey,
         });
         this.utility = new UtilityTools();
-
     }
 
     initializeIndex = async (indexname) => {
-        this.index = indexname;
+        this.indexName = indexname;
         console.log(`Validating index name ...`);
-        const haveIndex = await this.checkIndex(this.index);
+        const haveIndex = await this.checkIndex(this.indexName);
 
-        if (haveIndex) 
-        {
+        if (haveIndex) {
             console.log(`Index with the name ${this.index} already exists.`);
-        } 
-        else 
-        {
+        }
+        else {
             try {
-                await this.vectorDb.createIndex({
-                    name: this.index,
+                await this.#vectorDb.createIndex({
+                    name: this.indexName,
                     dimension: 8,
                     metric: 'cosine',
                     spec: {
@@ -41,51 +41,49 @@ class VectorDataBase {
                     }
                 });
                 await this.utility.delay();
-                console.log(`Vector Database initialized with index name ${this.index}`);
+                console.log(`Vector Database initialized with index name ${this.indexName}`);
+                this.index = this.#vectorDb.index(this.indexName);
             } catch (error) {
                 console.log(`Error initializing PineCone DataBase  ${error.message}`);
             }
+
         }
     }
 
     checkIndex = async (name) => {
-        const currentIndexes = await this.vectorDb.listIndexes();
+        const currentIndexes = await this.#vectorDb.listIndexes();
         const exists = currentIndexes.indexes.some(index => index.name === name);
         return exists;
     }
 
+    pushVectorBatch = async (batchvector) => {
 
-    embedData = async (rawdata) => {
+        try 
+        {
+            await this.index.namespace("testspace").upsert(batchvector);
+        }
+        catch (error) {
+            console.error(error.message);
+
+        }
+    }
+
+    queryIndex = async (queryembedding) => {
         try {
-            const modelEmbed = new HuggingFaceTransformersEmbeddings({ model: "Xenova/all-MiniLM-L6-v2"});
-            return await modelEmbed.embedDocuments(rawdata);
-
-        } catch (error) {
+            const resp = await this.index.namespace("testspace").query({
+                topK: 5,
+                vector: queryembedding,
+                includeMetadata: true
+            });
+            return resp;
+        }
+        catch (error) { 
+            console.error(error.message);
             return null;
         }
     }
 
-    pushVector = async (data) => {
-        try 
-        {
-
-
-        }
-        catch (error) {
-
-        }
-    }
-
-    queryIndex = async () => {
-
-    }
-
-    deleteIndex = async () => await this.vectorDb.deleteIndex(this.index);
-
-    #batchVectors = async () => {
-
-    }
-
+    deleteIndex = async () => await this.#vectorDb.deleteIndex(this.index);
 
 }
 

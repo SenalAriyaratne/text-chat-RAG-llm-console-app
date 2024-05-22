@@ -12,7 +12,6 @@ class Batches {
 
     addBatch = (key, batch) => !this.batches.has(key) ? this.batches.set(key,batch) : console.warn(`Batch with Key ${key} already exists.`);
 
-
     /**
      * Retrieves a batch by its key.
      * @param {any} key The key of the batch to retrieve.
@@ -37,6 +36,8 @@ class Batches {
         }
         this.batches.delete(key);
     }
+
+    getSize = () => this.batches.size;
 
     /**
      * Prints all batches and their keys.

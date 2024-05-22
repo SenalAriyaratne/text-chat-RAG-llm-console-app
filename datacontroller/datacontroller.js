@@ -2,14 +2,18 @@ import BatchArray from "./batcharray.js";
 import DataLoader from "./loader.js";
 import DataProcessor from "./processor.js";
 
+import Batches from "./batcharray.js";
+
 class DataController{
 
     #loader;
     #dataproc;
-    #rawChunkArray = [];
-    #embdedArray = [];
+    #batchds;
+    #rawChunkArray;
+    #embdedArray;
 
     constructor(){
+        this.#batchds = new Batches();
         this.#loader = new DataLoader();
         this.#dataproc = new DataProcessor();
         this.#loader.setSplitterParams(30,5);
@@ -23,11 +27,19 @@ class DataController{
 
     returnEmbeddings = () => this.#embdedArray;
 
-    embedChunks = async () =>  this.#embdedArray = await this.#dataproc.embedData(this.#rawChunkArray); 
+    numberOfBatches = () => this.#batchds.getSize();
+
+    embedChunks = async () =>  this.#embdedArray = await this.#dataproc.embedData(this.#rawChunkArray);
+
+    produceBatches = () => {
+        this.#dataproc.receiveBatchAdder(this.#batchds.addBatch.bind(this.#batchds));
+        this.#dataproc.createBatch(this.#rawChunkArray, this.#embdedArray);
+    }
+
+    retrieveBatches = () => this.#batchds.getAllBatches();
+
+    checkBatch = (key) => this.#batchds.getBatch(key);
     
-
-
-
 }
 
 export default DataController;
